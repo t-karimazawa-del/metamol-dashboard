@@ -533,9 +533,17 @@ async function saveCase() {
 }
 
 // ===================== Chat =====================
-let apiKey = '';
+let apiKey = localStorage.getItem('metamol_api_key') || '';
 let chatHistory = [];
 let isLoading = false;
+
+// 起動時にAPIキーが保存済みなら自動設定
+(function initApiKey() {
+  if (apiKey) {
+    document.getElementById('api-key-bar').style.display = 'none';
+    document.getElementById('api-key-set-bar').style.display = 'flex';
+  }
+})();
 
 function buildSystemPrompt() {
   const casesSummary = cases.map((c,i) => {
@@ -577,12 +585,14 @@ function setApiKey() {
   const val = document.getElementById('api-key-input').value.trim();
   if (!val.startsWith('sk-ant-')) { alert('APIキーは sk-ant- で始まる形式を入力してください'); return; }
   apiKey = val;
+  localStorage.setItem('metamol_api_key', apiKey);
   document.getElementById('api-key-bar').style.display = 'none';
   document.getElementById('api-key-set-bar').style.display = 'flex';
 }
 
 function clearApiKey() {
   apiKey = '';
+  localStorage.removeItem('metamol_api_key');
   document.getElementById('api-key-input').value = '';
   document.getElementById('api-key-bar').style.display = 'flex';
   document.getElementById('api-key-set-bar').style.display = 'none';
