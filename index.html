@@ -240,7 +240,7 @@ const analysis=[
    advice:"【最優先】KPI確定会議を単独設定する。次回進捗報告会（6/18）の議題を「KPI最終決定」に絞る。1人当たり粗利KPIの担当者を井上取締役が即日指名し、6/18までに数値案を1つ持ち込ませる。"}
 ];
 
-const library=[
+let library=[
   {date:"2026-05-08",name:"メタモルPJ初回打ち合わせ議事録",type:"戦略",priority:"中",summary:"PJ再始動を決定。目標：売上100億円。コアメンバー4名確定。",url:"https://docs.google.com/document/d/1G9StkTW-y3VSbs2u56gnq3H2hCCYhz79/edit"},
   {date:"2026-06-04",name:"第二回メタモル会",type:"戦略",priority:"中",summary:"自動配車システム本運用移行（9〜10月目途）、書類回収オペレーション刷新の試験運用開始、組織図可視化を決定。次回MTGは6月18日17時。",url:"https://docs.google.com/document/d/1sE1F2xXDiD_Af5aSEEscvvAn0mboKsGB/edit"},
   {date:"2026-06-04",name:"第二回メタモル会【再提出】",type:"戦略",priority:"中",summary:"（STEP3でAIが自動要約します）",url:"https://docs.google.com/document/d/1EgAv9JvTrXrlHKGd31UY5ug1W9-unkzG/edit"}
@@ -307,9 +307,10 @@ async function syncAll() {
   btn.disabled = true;
 
   try {
-    const [casesRes, masterRes] = await Promise.all([gasGet('getCases'), gasGet('getMaster')]);
+    const [casesRes, masterRes, libraryRes] = await Promise.all([gasGet('getCases'), gasGet('getMaster'), gasGet('getLibrary')]);
     if (casesRes?.ok) { cases = casesRes.cases; renderCases(); }
     if (masterRes?.ok) { master = masterRes.master; renderMaster(); }
+    if (libraryRes?.ok) { library = libraryRes.library; renderLibrary(); }
     showToast('✓ スプレッドシートと同期しました');
   } catch(e) {
     showToast('同期に失敗しました: ' + e.message);
@@ -413,17 +414,34 @@ function toggleAnalysis(i, btn) {
   btn.querySelector('span').textContent = open ? '閉じる' : '課題・アドバイスを見る';
 }
 
+function libMap(l) {
+  return {
+    date:    String(l['登録日'] || l.date || '').slice(0,10),
+    name:    l['資料名']   || l.name    || '',
+    type:    l['種別']     || l.type    || '',
+    priority:l['AI参照優先度'] || l.priority || '',
+    summary: l['抽出テキスト・要約'] || l['抽出テキスト/要約'] || l.summary || '',
+    url:     l['元ファイルリンク'] || l.url || ''
+  };
+}
+
 function renderLibrary() {
-  document.getElementById('library-list').innerHTML = library.map(l=>`
-    <div class="lib-item">
+  if (!library.length) {
+    document.getElementById('library-list').innerHTML = '<div style="color:#888780;font-size:13px;padding:20px 0">資料がありません</div>';
+    return;
+  }
+  document.getElementById('library-list').innerHTML = library.map(l => {
+    const m = libMap(l);
+    return `<div class="lib-item">
       <div class="lib-icon"><i class="ti ti-file-text" style="font-size:18px;color:#185FA5"></i></div>
       <div style="flex:1;min-width:0">
-        <div class="lib-name">${l.name}</div>
-        <div class="lib-meta">${l.date} &nbsp;種別: ${l.type} &nbsp;優先度: ${l.priority}</div>
-        <div class="lib-summary">${l.summary}</div>
-        <a class="lib-link" href="${l.url}" target="_blank"><i class="ti ti-external-link"></i> 元ファイルを開く</a>
+        <div class="lib-name">${m.name}</div>
+        <div class="lib-meta">${m.date} &nbsp;種別: ${m.type} &nbsp;優先度: ${m.priority}</div>
+        <div class="lib-summary">${m.summary}</div>
+        ${m.url ? `<a class="lib-link" href="${m.url}" target="_blank"><i class="ti ti-external-link"></i> 元ファイルを開く</a>` : ''}
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderMaster() {
