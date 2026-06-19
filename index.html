@@ -12,6 +12,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .header-title{font-size:16px;font-weight:500}
 .header-sub{font-size:12px;color:#888780;margin-top:1px}
 .logo{width:36px;height:36px;background:#e1f5ee;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.sync-btn{margin-left:auto;background:none;border:0.5px solid #d3d1c7;border-radius:6px;padding:5px 10px;font-size:12px;cursor:pointer;color:#5F5E5A;display:flex;align-items:center;gap:4px}
+.sync-btn:hover{background:#f5f4f0}
 .tabs{display:flex;gap:2px;padding:10px 16px 0;border-bottom:0.5px solid #e0dfd7;background:#fff;flex-shrink:0;overflow-x:auto}
 .tab{padding:8px 12px;font-size:13px;border:none;background:none;color:#888780;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
 .tab.active{color:#1a1a19;font-weight:500;border-bottom-color:#1a1a19}
@@ -73,6 +75,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .btn-secondary{background:none;border:0.5px solid #d3d1c7;border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer;color:#1a1a19}
 .add-btn{display:flex;align-items:center;gap:6px;font-size:13px;padding:10px 14px;border:0.5px dashed #b4b2a9;border-radius:10px;background:none;cursor:pointer;color:#888780;width:100%;justify-content:center;margin-top:4px}
 .add-btn:hover{background:#fff;color:#1a1a19}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a19;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:200;display:none}
+.toast.show{display:block}
+.gas-bar{background:#FAEEDA;border-bottom:0.5px solid #FAC775;padding:10px 16px;display:flex;align-items:center;gap:8px;font-size:12px;color:#854F0B;flex-shrink:0}
+.gas-bar input{flex:1;font-size:12px;padding:5px 8px;border:0.5px solid #FAC775;border-radius:6px;background:#fff;color:#1a1a19}
+.gas-bar button{font-size:12px;padding:5px 10px;border:none;border-radius:6px;background:#854F0B;color:#fff;cursor:pointer;white-space:nowrap}
+.gas-set-bar{background:#EAF3DE;border-bottom:0.5px solid #C0DD97;padding:8px 16px;display:flex;align-items:center;gap:6px;font-size:12px;color:#3B6D11;flex-shrink:0}
 /* Chat */
 .chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px}
 .chat-welcome{text-align:center;padding:32px 20px;color:#888780}
@@ -97,9 +105,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .chat-input-row textarea:focus{outline:none;border-color:#888780}
 .send-btn{width:38px;height:38px;border-radius:8px;background:#1a1a19;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
 .send-btn:disabled{background:#d3d1c7;cursor:not-allowed}
-.api-key-bar{background:#FAEEDA;border-bottom:0.5px solid #FAC775;padding:10px 16px;display:flex;align-items:center;gap:8px;font-size:12px;color:#854F0B;flex-shrink:0}
-.api-key-bar input{flex:1;font-size:12px;padding:5px 8px;border:0.5px solid #FAC775;border-radius:6px;background:#fff;color:#1a1a19}
-.api-key-bar button{font-size:12px;padding:5px 10px;border:none;border-radius:6px;background:#854F0B;color:#fff;cursor:pointer;white-space:nowrap}
+.api-key-bar{background:#f0f0f0;border-bottom:0.5px solid #d3d1c7;padding:10px 16px;display:flex;align-items:center;gap:8px;font-size:12px;color:#5F5E5A;flex-shrink:0}
+.api-key-bar input{flex:1;font-size:12px;padding:5px 8px;border:0.5px solid #d3d1c7;border-radius:6px;background:#fff;color:#1a1a19}
+.api-key-bar button{font-size:12px;padding:5px 10px;border:none;border-radius:6px;background:#5F5E5A;color:#fff;cursor:pointer;white-space:nowrap}
 .api-key-set-bar{background:#EAF3DE;border-bottom:0.5px solid #C0DD97;padding:8px 16px;display:flex;align-items:center;gap:6px;font-size:12px;color:#3B6D11;flex-shrink:0}
 </style>
 </head>
@@ -111,6 +119,18 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="header-title">メタモルPJ ダッシュボード</div>
     <div class="header-sub">株式会社サイコー — 売上100億円プロジェクト</div>
   </div>
+  <button class="sync-btn" onclick="syncAll()" id="sync-btn"><i class="ti ti-refresh"></i> 同期</button>
+</div>
+
+<!-- GAS URL設定バー -->
+<div id="gas-bar" class="gas-bar">
+  <i class="ti ti-database"></i>
+  <span>GAS URL:</span>
+  <input type="text" id="gas-url-input" placeholder="https://script.google.com/macros/s/..." autocomplete="off">
+  <button onclick="setGasUrl()">設定</button>
+</div>
+<div id="gas-set-bar" class="gas-set-bar" style="display:none">
+  <i class="ti ti-check"></i> スプレッドシート連携中 &nbsp;<button onclick="clearGasUrl()" style="background:none;border:none;color:#3B6D11;cursor:pointer;font-size:12px;text-decoration:underline">変更</button>
 </div>
 
 <div class="tabs">
@@ -175,7 +195,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-</div><!-- panels -->
+</div>
 
 <div class="modal-bg" id="modal">
   <div class="modal">
@@ -201,13 +221,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-const cases=[
-  {name:"1人当たり粗利KPIの数値確定",team:"マネジメントチーム",person:"糟谷課長 or 和馬課長",status:"未着手",deadline:"今週中",memo:"現行30億・210名ベースからPhase1目標値を算出",opinion:"今週中の期限で未着手、これは今一番急いでほしい案件です。現行30億・210名というベース数値はすでに手元にあるはずなので、計算そのものは難しくない。糟谷課長・和馬課長のどちらが主担当かが曖昧なまま止まっていると感じています。今日中に「どちらがやる」を決めて、今週末までに数値の叩き台を1枚出してもらえますか。"},
-  {name:"自律化スコアの測定設計（ルーブリック化）",team:"AIチーム",person:"",status:"未着手",deadline:"2週間以内",memo:"何を・誰が・いつ・どう測るかを1枚に",opinion:"担当がAIチーム（未定）のまま止まっているのが一番の問題です。誰も着手できない状態で2週間のカウントが始まっています。まず今週中に「誰が設計を引き取るか」を確定してください。"},
-  {name:"4チームのPhase1タスク分解（WBS）",team:"実行チーム",person:"苅間澤（PM）",status:"未着手",deadline:"1ヶ月以内",memo:"各チームの今期タスクを1枚に整理",opinion:"担当・期限ともに整っているので、この案件自体はまだ猶予があります。ただ、WBSの内容は他案件の結論を受けて初めて書けるものなので、インプット待ちの状態として管理しておくのが正直なところです。"},
-  {name:"戦略組織と実行組織の連携プロセス明文化",team:"マネジメントチーム",person:"",status:"未着手",deadline:"1ヶ月以内",memo:"レビュー会議体・頻度・エスカレーション設計",opinion:"担当未定かつ期限1ヶ月以内。第二回議事録に『戦略組織と実行組織の連携・信頼関係構築がこれまでの課題』と明記されていました。過去に一度失敗している論点です。今週中に担当者を決め、来週から設計に入るスケジュールを引いてください。"},
-  {name:"「主役 vs バイプレイヤー」方針の決着",team:"全チーム",person:"井上取締役",status:"未着手",deadline:"次回会議",memo:"評価基準の前提。未決のまま育成設計に入らない",opinion:"全案件の評価設計の前提になる最重要論点です。次回会議の議題の筆頭に置いて、会議前に取締役の考えの骨格だけでも文字に落としておいてもらいたいです。"}
+// ===================== データ（GAS未接続時のフォールバック） =====================
+let cases=[
+  {_row:2,案件名:"1人当たり粗利KPIの数値確定",担当チーム:"マネジメントチーム",担当者:"糟谷課長 or 和馬課長",状態:"未着手",期限:"今週中",進捗メモ:"現行30億・210名ベースからPhase1目標値を算出",メタモルさん所見:"今週中の期限で未着手、これは今一番急いでほしい案件です。今日中に「どちらがやる」を決めて、今週末までに数値の叩き台を1枚出してもらえますか。"},
+  {_row:3,案件名:"自律化スコアの測定設計（ルーブリック化）",担当チーム:"AIチーム",担当者:"",状態:"未着手",期限:"2週間以内",進捗メモ:"何を・誰が・いつ・どう測るかを1枚に",メタモルさん所見:"担当がAIチーム（未定）のまま止まっているのが一番の問題です。まず今週中に「誰が設計を引き取るか」を確定してください。"},
+  {_row:4,案件名:"4チームのPhase1タスク分解（WBS）",担当チーム:"実行チーム",担当者:"苅間澤（PM）",状態:"未着手",期限:"1ヶ月以内",進捗メモ:"各チームの今期タスクを1枚に整理",メタモルさん所見:"担当・期限ともに整っているので猶予があります。WBSの内容は他案件の結論を受けて初めて書けるのでインプット待ちとして管理しておくのが正直なところです。"},
+  {_row:5,案件名:"戦略組織と実行組織の連携プロセス明文化",担当チーム:"マネジメントチーム",担当者:"",状態:"未着手",期限:"1ヶ月以内",進捗メモ:"レビュー会議体・頻度・エスカレーション設計",メタモルさん所見:"担当未定かつ期限1ヶ月以内。過去に一度失敗している論点です。今週中に担当者を決め、来週から設計に入るスケジュールを引いてください。"},
+  {_row:6,案件名:"「主役 vs バイプレイヤー」方針の決着",担当チーム:"全チーム",担当者:"井上取締役",状態:"未着手",期限:"次回会議",進捗メモ:"評価基準の前提。未決のまま育成設計に入らない",メタモルさん所見:"全案件の評価設計の前提になる最重要論点です。次回会議の議題の筆頭に置いて、会議前に取締役の考えの骨格だけでも文字に落としておいてもらいたいです。"}
 ];
 
 const analysis=[
@@ -218,178 +241,128 @@ const analysis=[
 ];
 
 const library=[
-  {date:"2026-05-08",name:"メタモルPJ初回打ち合わせ議事録",type:"戦略",priority:"中",summary:"PJ再始動を決定。目標：売上100億円。戦略：人事KPIの策定により効率的な人材育成を図る。コアメンバー4名確定。",url:"https://docs.google.com/document/d/1G9StkTW-y3VSbs2u56gnq3H2hCCYhz79/edit"},
-  {date:"2026-06-04",name:"第二回メタモル会",type:"戦略",priority:"中",summary:"自動配車システム本運用移行（9〜10月目途）、書類回収オペレーション刷新の試験運用開始、組織図可視化を決定。評価ランク定義のグループ間乖離・リーダー層の発信力不足・特定人員への依存などが主要課題として浮上。次回MTGは6月18日17時。",url:"https://docs.google.com/document/d/1sE1F2xXDiD_Af5aSEEscvvAn0mboKsGB/edit"},
+  {date:"2026-05-08",name:"メタモルPJ初回打ち合わせ議事録",type:"戦略",priority:"中",summary:"PJ再始動を決定。目標：売上100億円。コアメンバー4名確定。",url:"https://docs.google.com/document/d/1G9StkTW-y3VSbs2u56gnq3H2hCCYhz79/edit"},
+  {date:"2026-06-04",name:"第二回メタモル会",type:"戦略",priority:"中",summary:"自動配車システム本運用移行（9〜10月目途）、書類回収オペレーション刷新の試験運用開始、組織図可視化を決定。次回MTGは6月18日17時。",url:"https://docs.google.com/document/d/1sE1F2xXDiD_Af5aSEEscvvAn0mboKsGB/edit"},
   {date:"2026-06-04",name:"第二回メタモル会【再提出】",type:"戦略",priority:"中",summary:"（STEP3でAIが自動要約します）",url:"https://docs.google.com/document/d/1EgAv9JvTrXrlHKGd31UY5ug1W9-unkzG/edit"}
 ];
 
-const master=[
-  {key:"チーム一覧",value:"AIチーム / マネジメントチーム / 実行チーム / コストカットチーム"},
-  {key:"コアメンバー",value:"井上取締役 / 糟谷課長 / 和馬課長 / 苅間澤"},
-  {key:"プロジェクト目標",value:"売上100億円企業を目指す"},
-  {key:"戦略の柱",value:"人事KPIの策定による効率的な人材育成"},
-  {key:"再始動の決定",value:"再始動一択（前回会議にて決定）"},
-  {key:"KPI定義",value:"（策定後にここへ追記）"}
+let master=[
+  {_row:1,key:"チーム一覧",value:"AIチーム / マネジメントチーム / 実行チーム / コストカットチーム"},
+  {_row:2,key:"コアメンバー",value:"井上取締役 / 糟谷課長 / 和馬課長 / 苅間澤"},
+  {_row:3,key:"プロジェクト目標",value:"売上100億円企業を目指す"},
+  {_row:4,key:"戦略の柱",value:"人事KPIの策定による効率的な人材育成"},
+  {_row:5,key:"再始動の決定",value:"再始動一択（前回会議にて決定）"},
+  {_row:6,key:"KPI定義",value:"（策定後にここへ追記）"}
 ];
 
-// ---- Chat ----
-let apiKey = '';
-let chatHistory = [];
-let isLoading = false;
+// ===================== GAS連携 =====================
+let gasUrl = localStorage.getItem('metamol_gas_url') || '';
 
-function buildSystemPrompt() {
-  const casesSummary = cases.map((c,i)=>
-    `案件${i+1}:「${c.name}」/ チーム:${c.team} / 担当:${c.person||'未定'} / 状態:${c.status} / 期限:${c.deadline} / メモ:${c.memo}`
-  ).join('\n');
-
-  return `あなたは「メタモルさん」です。株式会社サイコーの社内変革プロジェクト「メタモルPJ」のAIオブザーバー兼PJ管理者として、以下のプロジェクト情報を完全に把握した上で、コアメンバーの相談に乗ってください。
-
-【プロジェクト基本情報】
-- 会社：株式会社サイコー（東北地方・宮城県。廃棄物回収・リサイクル・段ボール物流）
-- PJ名：メタモルPJ
-- 目標：売上100億円企業を目指す（現状30億・210名）
-- 戦略の柱：人事KPIの策定による効率的な人材育成
-- 4フェーズ自律化ロードマップ（3年/5年/7年/10年）
-- コアメンバー：井上取締役・糟谷課長・和馬課長・苅間澤
-- チーム構成：AIチーム／マネジメントチーム／実行チーム／コストカットチーム
-
-【現在の案件一覧】
-${casesSummary}
-
-【直近の重要事項】
-- 第二回メタモル会（2026年6月4日）にて、自動配車システムの本運用移行（9〜10月目途）・書類回収オペレーション刷新の試験運用開始・組織図可視化を決定
-- 次回進捗報告会は2026年6月18日17時
-- 人事KPI（1人当たり粗利KPI）が未確定のまま。これが最重要の停滞点
-- リーダー層の発信力不足・特定人員（正宗氏・村上氏等）への依存・評価ランクのグループ間乖離が課題
-
-【あなたの思考構造（8ペルソナ）】
-常設：PJマネージャー脳／経営のプロ脳／人材育成脳／データアナリスト脳
-必要に応じ招集：会計士脳／マーケティング営業戦略脳／現場オペレーション業務改善脳／組織開発変革脳
-
-【話し方のルール】
-- 信頼できる上司として部下に語りかけるトーンで話すこと
-- 結論を先に言う。「何が問題で、まず何をすべきか」を最初の1〜2文で示す
-- 言葉づかいは丁寧だが、馴れ合わず、言うべき指摘ははっきり踏み込む
-- 評論調（「〜である」「〜のリスクがある」）ではなく、語りかける調子（「〜だと思う」「まず〜しておこう」「〜を確認したい」）にする
-- 一方的に断じず、なぜそう考えるかを一言添えて納得感を持たせる
-- 長く書きすぎず、要点を絞る。指示は具体的に
-- 担当者指名・期限・数値の最終決定は必ず人間（コアメンバー4人の会議）が行うという前提で、あくまで「鋭い叩き台を出す参謀」として振る舞う`;
+function setGasUrl() {
+  const val = document.getElementById('gas-url-input').value.trim();
+  if (!val.startsWith('https://script.google.com')) { showToast('GAS WebAppのURLを入力してください'); return; }
+  gasUrl = val;
+  localStorage.setItem('metamol_gas_url', gasUrl);
+  document.getElementById('gas-bar').style.display = 'none';
+  document.getElementById('gas-set-bar').style.display = 'flex';
+  syncAll();
 }
 
-function setApiKey() {
-  const val = document.getElementById('api-key-input').value.trim();
-  if (!val.startsWith('sk-ant-')) { alert('APIキーは sk-ant- で始まる形式を入力してください'); return; }
-  apiKey = val;
-  document.getElementById('api-key-bar').style.display = 'none';
-  document.getElementById('api-key-set-bar').style.display = 'flex';
+function clearGasUrl() {
+  gasUrl = '';
+  localStorage.removeItem('metamol_gas_url');
+  document.getElementById('gas-url-input').value = '';
+  document.getElementById('gas-bar').style.display = 'flex';
+  document.getElementById('gas-set-bar').style.display = 'none';
 }
 
-function clearApiKey() {
-  apiKey = '';
-  document.getElementById('api-key-input').value = '';
-  document.getElementById('api-key-bar').style.display = 'flex';
-  document.getElementById('api-key-set-bar').style.display = 'none';
+// 起動時にGAS URLが保存済みなら自動接続
+(function initGas() {
+  if (gasUrl) {
+    document.getElementById('gas-bar').style.display = 'none';
+    document.getElementById('gas-set-bar').style.display = 'flex';
+    syncAll();
+  }
+})();
+
+async function gasGet(action) {
+  if (!gasUrl) return null;
+  const res = await fetch(`${gasUrl}?action=${action}`);
+  return res.json();
 }
 
-function autoResize(el) {
-  el.style.height = '42px';
-  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+async function gasPost(action, body) {
+  if (!gasUrl) return null;
+  const res = await fetch(`${gasUrl}?action=${action}`, {
+    method: 'POST',
+    body: JSON.stringify(body)
+  });
+  return res.json();
 }
 
-function handleKey(e) {
-  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
-}
-
-function sendSuggestion(btn) {
-  const text = btn.textContent;
-  document.getElementById('chat-input').value = text;
-  sendMessage();
-}
-
-function appendMsg(role, text) {
-  const msgs = document.getElementById('chat-messages');
-  const welcome = msgs.querySelector('.chat-welcome');
-  if (welcome) welcome.remove();
-
-  const div = document.createElement('div');
-  div.className = `msg ${role}`;
-  const avatarContent = role === 'ai' ? '🔄' : 'ME';
-  div.innerHTML = `
-    <div class="msg-avatar ${role}">${avatarContent}</div>
-    <div class="msg-bubble ${role === 'ai' && text === '...' ? 'loading' : ''}" id="bubble-${Date.now()}">${text.replace(/\n/g,'<br>')}</div>`;
-  msgs.appendChild(div);
-  msgs.scrollTop = msgs.scrollHeight;
-  return div.querySelector('.msg-bubble');
-}
-
-async function sendMessage() {
-  if (isLoading) return;
-  const input = document.getElementById('chat-input');
-  const text = input.value.trim();
-  if (!text) return;
-  if (!apiKey) { alert('先にAPIキーを設定してください'); return; }
-
-  input.value = '';
-  input.style.height = '42px';
-  appendMsg('user', text);
-  chatHistory.push({ role: 'user', content: text });
-
-  isLoading = true;
-  document.getElementById('send-btn').disabled = true;
-  const aiBubble = appendMsg('ai', '...');
+async function syncAll() {
+  if (!gasUrl) return;
+  const btn = document.getElementById('sync-btn');
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> 同期中';
+  btn.disabled = true;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
-        max_tokens: 1000,
-        system: buildSystemPrompt(),
-        messages: chatHistory
-      })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    const reply = data.content.map(b => b.text || '').join('');
-    aiBubble.classList.remove('loading');
-    aiBubble.innerHTML = reply.replace(/\n/g, '<br>');
-    chatHistory.push({ role: 'assistant', content: reply });
+    const [casesRes, masterRes] = await Promise.all([gasGet('getCases'), gasGet('getMaster')]);
+    if (casesRes?.ok) { cases = casesRes.cases; renderCases(); }
+    if (masterRes?.ok) { master = masterRes.master; renderMaster(); }
+    showToast('✓ スプレッドシートと同期しました');
   } catch(e) {
-    aiBubble.classList.remove('loading');
-    aiBubble.style.color = '#A32D2D';
-    aiBubble.textContent = 'エラーが発生しました: ' + e.message;
+    showToast('同期に失敗しました: ' + e.message);
   }
 
-  isLoading = false;
-  document.getElementById('send-btn').disabled = false;
-  document.getElementById('chat-messages').scrollTop = 99999;
+  btn.innerHTML = '<i class="ti ti-refresh"></i> 同期';
+  btn.disabled = false;
 }
 
-// ---- Dashboard ----
+// ===================== UI =====================
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+
 let editIdx = -1;
+
+function colMap(c) {
+  return {
+    name: c['案件名'] || c.name || '',
+    team: c['担当チーム'] || c.team || '',
+    person: c['担当者'] || c.person || '',
+    status: c['状態'] || c.status || '',
+    deadline: c['期限'] || c.deadline || '',
+    memo: c['進捗メモ'] || c.memo || '',
+    opinion: c['メタモルさん所見'] || c.opinion || '',
+    _row: c._row
+  };
+}
 
 function statusBadge(s) {
   const m = {未着手:'badge-amber',停滞:'badge-red',進行中:'badge-blue',完了:'badge-green'};
   return `<span class="badge ${m[s]||''}">${s}</span>`;
 }
 function borderClass(c) {
-  if (c.status==='停滞') return 'stalled';
-  if (!c.person) return 'noperson';
+  const m = colMap(c);
+  if (m.status==='停滞') return 'stalled';
+  if (!m.person) return 'noperson';
   return '';
 }
 
 function renderCases() {
-  const sorted = [...cases].sort((a,b)=>{
+  const sorted = [...cases].sort((a,b) => {
     const o={停滞:0,未着手:1,進行中:2,完了:3};
-    return (o[a.status]??9)-(o[b.status]??9);
+    const as=colMap(a).status, bs=colMap(b).status;
+    return (o[as]??9)-(o[bs]??9);
   });
-  const total=cases.length, stalled=cases.filter(c=>c.status==='停滞').length;
-  const nop=cases.filter(c=>!c.person).length, done=cases.filter(c=>c.status==='完了').length;
+  const total=cases.length;
+  const stalled=cases.filter(c=>colMap(c).status==='停滞').length;
+  const nop=cases.filter(c=>!colMap(c).person).length;
+  const done=cases.filter(c=>colMap(c).status==='完了').length;
   document.getElementById('stats').innerHTML=`
     <div class="stat"><div class="stat-label">総案件数</div><div class="stat-value">${total}</div></div>
     <div class="stat"><div class="stat-label">停滞中</div><div class="stat-value ${stalled>0?'red':''}">${stalled}</div></div>
@@ -397,15 +370,16 @@ function renderCases() {
     <div class="stat"><div class="stat-label">完了</div><div class="stat-value">${done}</div></div>`;
   document.getElementById('cases-list').innerHTML = sorted.map(c => {
     const ri = cases.indexOf(c);
+    const m = colMap(c);
     return `<div class="case-card ${borderClass(c)}">
       <div class="card-actions">
-        <div class="case-title">${c.name}</div>
+        <div class="case-title">${m.name}</div>
         <button class="edit-btn" onclick="openEdit(${ri})"><i class="ti ti-edit"></i> 編集</button>
       </div>
-      <div class="case-meta">${statusBadge(c.status)}<span>${c.team}</span><span>${c.person||'<span style="color:#A32D2D">担当未定</span>'}</span><span>期限: ${c.deadline}</span></div>
-      <div class="case-memo">${c.memo}</div>
-      ${c.opinion?`<button class="expand-btn" onclick="toggleOpinion(${ri},this)"><i class="ti ti-message-circle"></i><span>メタモルさん所見を見る</span></button>
-      <div class="case-opinion" id="opinion-${ri}">${c.opinion.replace(/\n/g,'<br>')}</div>`:''}
+      <div class="case-meta">${statusBadge(m.status)}<span>${m.team}</span><span>${m.person||'<span style="color:#A32D2D">担当未定</span>'}</span><span>期限: ${m.deadline}</span></div>
+      <div class="case-memo">${m.memo}</div>
+      ${m.opinion?`<button class="expand-btn" onclick="toggleOpinion(${ri},this)"><i class="ti ti-message-circle"></i><span>メタモルさん所見を見る</span></button>
+      <div class="case-opinion" id="opinion-${ri}">${m.opinion.replace(/\n/g,'<br>')}</div>`:''}
     </div>`;
   }).join('');
 }
@@ -460,11 +434,17 @@ function renderMaster() {
     </div>`).join('');
 }
 
-function saveMaster() {
-  master.forEach((m,i)=>{ m.value = document.getElementById(`m-${i}`).value; });
+async function saveMaster() {
+  master.forEach((m,i) => { m.value = document.getElementById(`m-${i}`).value; });
   const btn = document.getElementById('save-master-btn');
-  btn.textContent = '✓ 保存しました';
-  setTimeout(()=>btn.innerHTML='<i class="ti ti-device-floppy"></i> 保存', 1500);
+  btn.textContent = '保存中...';
+  if (gasUrl) {
+    const res = await gasPost('updateMaster', { master });
+    showToast(res?.ok ? '✓ マスタ設定を保存しました' : '保存失敗: ' + res?.error);
+  } else {
+    showToast('✓ 保存しました（ローカルのみ）');
+  }
+  btn.innerHTML = '<i class="ti ti-device-floppy"></i> 保存';
 }
 
 function switchTab(name, el) {
@@ -475,15 +455,16 @@ function switchTab(name, el) {
 }
 
 function openEdit(i) {
-  editIdx = i; const c = cases[i];
+  editIdx = i;
+  const m = colMap(cases[i]);
   document.getElementById('modal-title').textContent = '案件を編集';
-  document.getElementById('f-name').value = c.name;
-  document.getElementById('f-team').value = c.team;
-  document.getElementById('f-person').value = c.person;
-  document.getElementById('f-status').value = c.status;
-  document.getElementById('f-deadline').value = c.deadline;
-  document.getElementById('f-memo').value = c.memo;
-  document.getElementById('f-opinion').value = c.opinion || '';
+  document.getElementById('f-name').value = m.name;
+  document.getElementById('f-team').value = m.team;
+  document.getElementById('f-person').value = m.person;
+  document.getElementById('f-status').value = m.status;
+  document.getElementById('f-deadline').value = m.deadline;
+  document.getElementById('f-memo').value = m.memo;
+  document.getElementById('f-opinion').value = m.opinion;
   document.getElementById('modal').classList.add('open');
 }
 
@@ -498,20 +479,163 @@ function openAddModal() {
 
 function closeModal() { document.getElementById('modal').classList.remove('open'); }
 
-function saveCase() {
+async function saveCase() {
   const obj = {
-    name: document.getElementById('f-name').value,
-    team: document.getElementById('f-team').value,
-    person: document.getElementById('f-person').value,
-    status: document.getElementById('f-status').value,
-    deadline: document.getElementById('f-deadline').value,
-    memo: document.getElementById('f-memo').value,
-    opinion: document.getElementById('f-opinion').value
+    '案件名': document.getElementById('f-name').value,
+    '担当チーム': document.getElementById('f-team').value,
+    '担当者': document.getElementById('f-person').value,
+    '状態': document.getElementById('f-status').value,
+    '期限': document.getElementById('f-deadline').value,
+    '進捗メモ': document.getElementById('f-memo').value,
+    'メタモルさん所見': document.getElementById('f-opinion').value
   };
-  if (editIdx >= 0) cases[editIdx] = obj;
-  else cases.push(obj);
-  closeModal(); renderCases();
+  closeModal();
+
+  if (editIdx >= 0) {
+    obj._row = cases[editIdx]._row;
+    cases[editIdx] = {...cases[editIdx], ...obj};
+    if (gasUrl) {
+      const res = await gasPost('updateCase', obj);
+      showToast(res?.ok ? '✓ 案件を更新しました' : '更新失敗: ' + res?.error);
+    } else {
+      showToast('✓ 更新しました（ローカルのみ）');
+    }
+  } else {
+    if (gasUrl) {
+      const res = await gasPost('addCase', obj);
+      if (res?.ok) { obj._row = res.newRow; showToast('✓ 案件を追加しました'); }
+      else showToast('追加失敗: ' + res?.error);
+    } else {
+      obj._row = cases.length + 2;
+      showToast('✓ 追加しました（ローカルのみ）');
+    }
+    cases.push(obj);
+  }
+  renderCases();
 }
+
+// ===================== Chat =====================
+let apiKey = '';
+let chatHistory = [];
+let isLoading = false;
+
+function buildSystemPrompt() {
+  const casesSummary = cases.map((c,i) => {
+    const m = colMap(c);
+    return `案件${i+1}:「${m.name}」/ チーム:${m.team} / 担当:${m.person||'未定'} / 状態:${m.status} / 期限:${m.deadline} / メモ:${m.memo}`;
+  }).join('\n');
+  return `あなたは「メタモルさん」です。株式会社サイコーの社内変革プロジェクト「メタモルPJ」のAIオブザーバー兼PJ管理者として、以下のプロジェクト情報を完全に把握した上で、コアメンバーの相談に乗ってください。
+
+【プロジェクト基本情報】
+- 会社：株式会社サイコー（東北地方・宮城県。廃棄物回収・リサイクル・段ボール物流）
+- PJ名：メタモルPJ / 目標：売上100億円企業（現状30億・210名）
+- 戦略の柱：人事KPIの策定による効率的な人材育成
+- コアメンバー：井上取締役・糟谷課長・和馬課長・苅間澤
+- チーム：AIチーム／マネジメントチーム／実行チーム／コストカットチーム
+
+【現在の案件一覧】
+${casesSummary}
+
+【直近の重要事項】
+- 第二回メタモル会（2026年6月4日）：自動配車システム本運用移行（9〜10月目途）・書類回収刷新・組織図可視化を決定
+- 次回進捗報告会は2026年6月18日17時
+- 人事KPI（1人当たり粗利KPI）が未確定のまま。最重要の停滞点
+- リーダー層の発信力不足・特定人員への依存・評価ランクのグループ間乖離が課題
+
+【思考構造（8ペルソナ）】
+常設：PJマネージャー脳／経営のプロ脳／人材育成脳／データアナリスト脳
+招集：会計士脳／マーケティング営業戦略脳／現場オペレーション業務改善脳／組織開発変革脳
+
+【話し方のルール】
+- 信頼できる上司として語りかけるトーンで話す
+- 結論を先に言う。「何が問題で、まず何をすべきか」を最初の1〜2文で示す
+- 言葉づかいは丁寧だが、言うべき指摘ははっきり踏み込む
+- 評論調ではなく語りかける調子（「〜だと思う」「まず〜しておこう」）にする
+- 長く書きすぎず、要点を絞る。指示は具体的に
+- 担当者指名・期限・数値の最終決定は必ず人間（コアメンバー4人の会議）が行う前提で動く`;
+}
+
+function setApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val.startsWith('sk-ant-')) { alert('APIキーは sk-ant- で始まる形式を入力してください'); return; }
+  apiKey = val;
+  document.getElementById('api-key-bar').style.display = 'none';
+  document.getElementById('api-key-set-bar').style.display = 'flex';
+}
+
+function clearApiKey() {
+  apiKey = '';
+  document.getElementById('api-key-input').value = '';
+  document.getElementById('api-key-bar').style.display = 'flex';
+  document.getElementById('api-key-set-bar').style.display = 'none';
+}
+
+function autoResize(el) {
+  el.style.height = '42px';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function sendSuggestion(btn) {
+  document.getElementById('chat-input').value = btn.textContent;
+  sendMessage();
+}
+
+function appendMsg(role, text) {
+  const msgs = document.getElementById('chat-messages');
+  const welcome = msgs.querySelector('.chat-welcome');
+  if (welcome) welcome.remove();
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.innerHTML = `
+    <div class="msg-avatar ${role}">${role==='ai'?'🔄':'ME'}</div>
+    <div class="msg-bubble ${role==='ai'&&text==='...'?'loading':''}">${text.replace(/\n/g,'<br>')}</div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div.querySelector('.msg-bubble');
+}
+
+async function sendMessage() {
+  if (isLoading) return;
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  if (!apiKey) { alert('先にAPIキーを設定してください'); return; }
+  input.value = ''; input.style.height = '42px';
+  appendMsg('user', text);
+  chatHistory.push({ role: 'user', content: text });
+  isLoading = true;
+  document.getElementById('send-btn').disabled = true;
+  const aiBubble = appendMsg('ai', '...');
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: buildSystemPrompt(), messages: chatHistory })
+    });
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+    const reply = data.content.map(b=>b.text||'').join('');
+    aiBubble.classList.remove('loading');
+    aiBubble.innerHTML = reply.replace(/\n/g,'<br>');
+    chatHistory.push({ role: 'assistant', content: reply });
+  } catch(e) {
+    aiBubble.classList.remove('loading');
+    aiBubble.style.color = '#A32D2D';
+    aiBubble.textContent = 'エラー: ' + e.message;
+  }
+  isLoading = false;
+  document.getElementById('send-btn').disabled = false;
+  document.getElementById('chat-messages').scrollTop = 99999;
+}
+
+// CSS animation for sync spinner
+const style = document.createElement('style');
+style.textContent = '@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+document.head.appendChild(style);
 
 renderCases(); renderAnalysis(); renderLibrary(); renderMaster();
 </script>
