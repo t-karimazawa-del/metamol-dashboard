@@ -165,15 +165,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 </div>
 
 <div id="panel-chat" class="panel chat-panel">
-  <div id="api-key-bar" class="api-key-bar">
-    <i class="ti ti-key"></i>
-    <span>APIキー:</span>
-    <input type="password" id="api-key-input" placeholder="sk-ant-..." autocomplete="off">
-    <button onclick="setApiKey()">設定</button>
-  </div>
-  <div id="api-key-set-bar" class="api-key-set-bar" style="display:none">
-    <i class="ti ti-check"></i> APIキー設定済み &nbsp;<button onclick="clearApiKey()" style="background:none;border:none;color:#3B6D11;cursor:pointer;font-size:12px;text-decoration:underline">変更</button>
-  </div>
   <div class="chat-messages" id="chat-messages">
     <div class="chat-welcome">
       <div class="avatar">🔄</div>
@@ -533,70 +524,8 @@ async function saveCase() {
 }
 
 // ===================== Chat =====================
-let apiKey = localStorage.getItem('metamol_api_key') || '';
 let chatHistory = [];
 let isLoading = false;
-
-// 起動時にAPIキーが保存済みなら自動設定
-(function initApiKey() {
-  if (apiKey) {
-    document.getElementById('api-key-bar').style.display = 'none';
-    document.getElementById('api-key-set-bar').style.display = 'flex';
-  }
-})();
-
-function buildSystemPrompt() {
-  const casesSummary = cases.map((c,i) => {
-    const m = colMap(c);
-    return `案件${i+1}:「${m.name}」/ チーム:${m.team} / 担当:${m.person||'未定'} / 状態:${m.status} / 期限:${m.deadline} / メモ:${m.memo}`;
-  }).join('\n');
-  return `あなたは「メタモルさん」です。株式会社サイコーの社内変革プロジェクト「メタモルPJ」のAIオブザーバー兼PJ管理者として、以下のプロジェクト情報を完全に把握した上で、コアメンバーの相談に乗ってください。
-
-【プロジェクト基本情報】
-- 会社：株式会社サイコー（東北地方・宮城県。廃棄物回収・リサイクル・段ボール物流）
-- PJ名：メタモルPJ / 目標：売上100億円企業（現状30億・210名）
-- 戦略の柱：人事KPIの策定による効率的な人材育成
-- コアメンバー：井上取締役・糟谷課長・和馬課長・苅間澤
-- チーム：AIチーム／マネジメントチーム／実行チーム／コストカットチーム
-
-【現在の案件一覧】
-${casesSummary}
-
-【直近の重要事項】
-- 第二回メタモル会（2026年6月4日）：自動配車システム本運用移行（9〜10月目途）・書類回収刷新・組織図可視化を決定
-- 次回進捗報告会は2026年6月18日17時
-- 人事KPI（1人当たり粗利KPI）が未確定のまま。最重要の停滞点
-- リーダー層の発信力不足・特定人員への依存・評価ランクのグループ間乖離が課題
-
-【思考構造（8ペルソナ）】
-常設：PJマネージャー脳／経営のプロ脳／人材育成脳／データアナリスト脳
-招集：会計士脳／マーケティング営業戦略脳／現場オペレーション業務改善脳／組織開発変革脳
-
-【話し方のルール】
-- 信頼できる上司として語りかけるトーンで話す
-- 結論を先に言う。「何が問題で、まず何をすべきか」を最初の1〜2文で示す
-- 言葉づかいは丁寧だが、言うべき指摘ははっきり踏み込む
-- 評論調ではなく語りかける調子（「〜だと思う」「まず〜しておこう」）にする
-- 長く書きすぎず、要点を絞る。指示は具体的に
-- 担当者指名・期限・数値の最終決定は必ず人間（コアメンバー4人の会議）が行う前提で動く`;
-}
-
-function setApiKey() {
-  const val = document.getElementById('api-key-input').value.trim();
-  if (!val.startsWith('sk-ant-')) { alert('APIキーは sk-ant- で始まる形式を入力してください'); return; }
-  apiKey = val;
-  localStorage.setItem('metamol_api_key', apiKey);
-  document.getElementById('api-key-bar').style.display = 'none';
-  document.getElementById('api-key-set-bar').style.display = 'flex';
-}
-
-function clearApiKey() {
-  apiKey = '';
-  localStorage.removeItem('metamol_api_key');
-  document.getElementById('api-key-input').value = '';
-  document.getElementById('api-key-bar').style.display = 'flex';
-  document.getElementById('api-key-set-bar').style.display = 'none';
-}
 
 function autoResize(el) {
   el.style.height = '42px';
@@ -628,10 +557,10 @@ function appendMsg(role, text) {
 
 async function sendMessage() {
   if (isLoading) return;
+  if (!gasUrl) { showToast('先にGAS URLを設定してください'); return; }
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text) return;
-  if (!apiKey) { alert('先にAPIキーを設定してください'); return; }
   input.value = ''; input.style.height = '42px';
   appendMsg('user', text);
   chatHistory.push({ role: 'user', content: text });
@@ -639,14 +568,9 @@ async function sendMessage() {
   document.getElementById('send-btn').disabled = true;
   const aiBubble = appendMsg('ai', '...');
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: 'claude-sonnet-4-6', max_tokens: 1000, system: buildSystemPrompt(), messages: chatHistory })
-    });
-    const data = await res.json();
-    if (data.error) throw new Error(data.error.message);
-    const reply = data.content.map(b=>b.text||'').join('');
+    const res = await gasPost('chat', { messages: chatHistory });
+    if (!res?.ok) throw new Error(res?.error || '不明なエラー');
+    const reply = res.reply;
     aiBubble.classList.remove('loading');
     aiBubble.innerHTML = reply.replace(/\n/g,'<br>');
     chatHistory.push({ role: 'assistant', content: reply });
